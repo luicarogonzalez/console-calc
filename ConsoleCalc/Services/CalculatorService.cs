@@ -38,7 +38,15 @@ public class CalculatorService : ICalculatorService
                     negativeNumbers.Add(number);
                 }
                 
-                numbers.Add(number);
+                // Skip numbers greater than the configured limit (0 means no limit)
+                if (_settings.SkipNumbersGreaterThan > 0 && number > _settings.SkipNumbersGreaterThan)
+                {
+                    numbers.Add(0);
+                }
+                else
+                {
+                    numbers.Add(number);
+                }
             }
         }
 

@@ -229,4 +229,83 @@ public class CalculatorServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => service.Add(input));
         Assert.Equal("Negative numbers are not allowed: -2, -5, -7", exception.Message);
     }
+
+    [Fact]
+    public void Add_WithNumbersGreaterThanLimit_ConvertsToZero()
+    {
+        // Arrange - Using default settings with SkipNumbersGreaterThan = 1000
+        var input = "2,1001,5";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("2 + 0 + 5 = 7", result.Formula);
+        Assert.Equal(7, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithMultipleNumbersGreaterThanLimit_ConvertsAllToZero()
+    {
+        // Arrange
+        var input = "2,1500,1001,3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("2 + 0 + 0 + 3 = 5", result.Formula);
+        Assert.Equal(5, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithNumberEqualToLimit_IsNotSkipped()
+    {
+        // Arrange - Number exactly equal to 1000 should NOT be skipped
+        var input = "2,1000,5";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("2 + 1000 + 5 = 1007", result.Formula);
+        Assert.Equal(1007, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithSkipDisabled_AllowsLargeNumbers()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["CalculatorSettings:MaxNumbersAllowed"] = "0",
+                ["CalculatorSettings:Separators:0"] = ",",
+                ["CalculatorSettings:Separators:1"] = "\n",
+                ["CalculatorSettings:AllowNegativeNumbers"] = "true",
+                ["CalculatorSettings:SkipNumbersGreaterThan"] = "0"
+            })
+            .Build();
+
+        var settings = new CalculatorSettings();
+        config.GetSection("CalculatorSettings").Bind(settings);
+        var service = new CalculatorService(Options.Create(settings));
+
+        var input = "2,5000,3";
+
+        // Act
+        var result = service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("2 + 5000 + 3 = 5005", result.Formula);
+        Assert.Equal(5005, result.Result);
+    }
 }
