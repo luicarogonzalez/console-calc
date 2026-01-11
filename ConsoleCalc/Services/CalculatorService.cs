@@ -32,8 +32,8 @@ public class CalculatorService : ICalculatorService
             }
         }
 
-        // Validate number count
-        if (numbers.Count > _settings.MaxNumbersAllowed)
+        // Validate number count (0 means no limit)
+        if (_settings.MaxNumbersAllowed > 0 && numbers.Count > _settings.MaxNumbersAllowed)
             throw new InvalidOperationException($"No more than {_settings.MaxNumbersAllowed} numbers are allowed");
 
         var result = numbers.Sum();
