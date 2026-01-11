@@ -28,8 +28,9 @@ public class Application
 
         while (true)
         {
-            //showing active separator from settings
-            _consoleService.Write($"Enter numbers separated by '{_settings.Separator}': ");
+            //showing active separators from settings
+            var displaySeparators = _settings.Separators.Select(s => s.Replace("\n", "\\n")).ToArray();
+            _consoleService.Write($"Enter numbers separated by: {string.Join(" or ", displaySeparators)}: ");
             var input = _consoleService.ReadLine();
 
             try

@@ -155,4 +155,68 @@ public class CalculatorServiceTests
         Assert.Equal("42 = 42", result.Formula);
         Assert.Equal(42, result.Result);
     }
+
+    [Fact]
+    public void Add_WithNewlineSeparator_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "1\n2\n3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithLiteralBackslashN_ConvertsToNewline()
+    {
+        // Arrange
+        var input = "1\\n2\\n3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithMultipleNewlines_TreatsEmptyAsZero()
+    {
+        // Arrange
+        var input = "1\n\n3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 0 + 3 = 4", result.Formula);
+        Assert.Equal(4, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithMixedSeparators_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "1,2\n3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
 }

@@ -16,7 +16,10 @@ public class CalculatorService : ICalculatorService
 
     public CalculatorResult Add(string input)
     {
-        var parts = input.Split(_settings.Separator);
+        // Allow literal \n in input to be interpreted as newline separator
+        input = input.Replace("\\n", "\n");
+        
+        var parts = input.Split(_settings.Separators, StringSplitOptions.None);
         var numbers = new List<int>();
 
         foreach (var part in parts)
