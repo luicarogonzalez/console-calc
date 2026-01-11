@@ -125,22 +125,6 @@ public class CalculatorServiceTests
     }
 
     [Fact]
-    public void Add_WithNegativeNumbers_ReturnsCorrectResult()
-    {
-        // Arrange
-        var input = "-5,3";
-
-        // Act
-        var result = _service.Add(input);
-
-        // Assert
-        _output.WriteLine($"Input: {input}");
-        _output.WriteLine($"Formula: {result.Formula}");
-        Assert.Equal("-5 + 3 = -2", result.Formula);
-        Assert.Equal(-2, result.Result);
-    }
-
-    [Fact]
     public void Add_WithSingleNumber_ReturnsCorrectResult()
     {
         // Arrange
@@ -218,5 +202,31 @@ public class CalculatorServiceTests
         _output.WriteLine($"Formula: {result.Formula}");
         Assert.Equal("1 + 2 + 3 = 6", result.Formula);
         Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithNegativeNumbersDisallowed_ThrowsException()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["CalculatorSettings:MaxNumbersAllowed"] = "0",
+                ["CalculatorSettings:Separators:0"] = ",",
+                ["CalculatorSettings:Separators:1"] = "\n",
+                ["CalculatorSettings:AllowNegativeNumbers"] = "false"
+            })
+            .Build();
+
+        var settings = new CalculatorSettings();
+        config.GetSection("CalculatorSettings").Bind(settings);
+        var service = new CalculatorService(Options.Create(settings));
+
+        var input = "1,-2,3,-5,-7";
+
+        // Act & Assert
+        _output.WriteLine($"Input: {input}");
+        var exception = Assert.Throws<InvalidOperationException>(() => service.Add(input));
+        Assert.Equal("Negative numbers are not allowed: -2, -5, -7", exception.Message);
     }
 }

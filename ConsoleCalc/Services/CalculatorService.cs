@@ -21,6 +21,7 @@ public class CalculatorService : ICalculatorService
         
         var parts = input.Split(_settings.Separators, StringSplitOptions.None);
         var numbers = new List<int>();
+        var negativeNumbers = new List<int>();
 
         foreach (var part in parts)
         {
@@ -31,8 +32,21 @@ public class CalculatorService : ICalculatorService
             }
             else
             {
+                // Collect negative numbers if not allowed
+                if (!_settings.AllowNegativeNumbers && number < 0)
+                {
+                    negativeNumbers.Add(number);
+                }
+                
                 numbers.Add(number);
             }
+        }
+
+        // Validate negative numbers if not allowed
+        if (!_settings.AllowNegativeNumbers && negativeNumbers.Count > 0)
+        {
+            var negativeList = string.Join(", ", negativeNumbers);
+            throw new InvalidOperationException($"Negative numbers are not allowed: {negativeList}");
         }
 
         // Validate number count (0 means no limit)
