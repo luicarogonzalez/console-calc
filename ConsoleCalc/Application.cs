@@ -35,8 +35,17 @@ public class Application
 
             try
             {
-                var result = _calculatorService.Add(input);
-                _consoleService.WriteLine(result.Formula);
+                var addResult = _calculatorService.Add(input);
+                _consoleService.WriteLine($"Addition:       {addResult.Formula}");
+                
+                var subtractResult = _calculatorService.Subtract(input);
+                _consoleService.WriteLine($"Subtraction:    {subtractResult.Formula}");
+                
+                var multiplyResult = _calculatorService.Multiply(input);
+                _consoleService.WriteLine($"Multiplication: {multiplyResult.Formula}");
+                
+                var divideResult = _calculatorService.Divide(input);
+                _consoleService.WriteLine($"Division:       {divideResult.Formula}");
             }
             catch (Exception ex)
             {

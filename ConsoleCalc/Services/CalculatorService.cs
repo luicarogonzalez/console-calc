@@ -21,7 +21,42 @@ public class CalculatorService : ICalculatorService
         var (numbers, negativeNumbers) = ParseNumbers(processedInput, separators);
         ValidateNumbers(numbers, negativeNumbers);
         
-        return CalculateResult(numbers);
+        return CalculateResult(numbers, (nums) => nums.Sum(), "+");
+    }
+
+    public CalculatorResult Subtract(string input)
+    {
+        input = NormalizeInput(input);
+        var (processedInput, separators) = ExtractCustomDelimiter(input);
+        var (numbers, negativeNumbers) = ParseNumbers(processedInput, separators);
+        ValidateNumbers(numbers, negativeNumbers);
+        
+        return CalculateResult(numbers, (nums) => nums.First() - nums.Skip(1).Sum(), "-");
+    }
+
+    public CalculatorResult Multiply(string input)
+    {
+        input = NormalizeInput(input);
+        var (processedInput, separators) = ExtractCustomDelimiter(input);
+        var (numbers, negativeNumbers) = ParseNumbers(processedInput, separators);
+        ValidateNumbers(numbers, negativeNumbers);
+        
+        return CalculateResult(numbers, (nums) => nums.Aggregate(1, (acc, n) => acc * n), "*");
+    }
+
+    public CalculatorResult Divide(string input)
+    {
+        input = NormalizeInput(input);
+        var (processedInput, separators) = ExtractCustomDelimiter(input);
+        var (numbers, negativeNumbers) = ParseNumbers(processedInput, separators);
+        ValidateNumbers(numbers, negativeNumbers);
+        
+        if (numbers.Skip(1).Any(n => n == 0))
+        {
+            throw new InvalidOperationException("Cannot divide by zero");
+        }
+        
+        return CalculateResult(numbers, (nums) => nums.Skip(1).Aggregate(nums.First(), (acc, n) => acc / n), "/");
     }
 
     private string NormalizeInput(string input)
@@ -152,10 +187,10 @@ public class CalculatorService : ICalculatorService
         }
     }
 
-    private CalculatorResult CalculateResult(List<int> numbers)
+    private CalculatorResult CalculateResult(List<int> numbers, Func<List<int>, int> operation, string operatorSymbol)
     {
-        var result = numbers.Sum();
-        var formula = string.Join(" + ", numbers) + " = " + result;
+        var result = operation(numbers);
+        var formula = string.Join($" {operatorSymbol} ", numbers) + " = " + result;
 
         return new CalculatorResult
         {

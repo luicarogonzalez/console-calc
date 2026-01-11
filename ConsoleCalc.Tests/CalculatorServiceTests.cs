@@ -619,4 +619,112 @@ public class CalculatorServiceTests
         Assert.Equal("1 + 2 + 3 = 6", result.Formula);
         Assert.Equal(6, result.Result);
     }
+
+    [Fact]
+    public void Subtract_WithValidNumbers_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "10,3,2";
+
+        // Act
+        var result = _service.Subtract(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("10 - 3 - 2 = 5", result.Formula);
+        Assert.Equal(5, result.Result);
+    }
+
+    [Fact]
+    public void Subtract_WithSingleNumber_ReturnsNumber()
+    {
+        // Arrange
+        var input = "42";
+
+        // Act
+        var result = _service.Subtract(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("42 = 42", result.Formula);
+        Assert.Equal(42, result.Result);
+    }
+
+    [Fact]
+    public void Multiply_WithValidNumbers_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "2,3,4";
+
+        // Act
+        var result = _service.Multiply(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("2 * 3 * 4 = 24", result.Formula);
+        Assert.Equal(24, result.Result);
+    }
+
+    [Fact]
+    public void Multiply_WithZero_ReturnsZero()
+    {
+        // Arrange
+        var input = "5,0,3";
+
+        // Act
+        var result = _service.Multiply(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("5 * 0 * 3 = 0", result.Formula);
+        Assert.Equal(0, result.Result);
+    }
+
+    [Fact]
+    public void Divide_WithValidNumbers_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "20,4,5";
+
+        // Act
+        var result = _service.Divide(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("20 / 4 / 5 = 1", result.Formula);
+        Assert.Equal(1, result.Result);
+    }
+
+    [Fact]
+    public void Divide_ByZero_ThrowsException()
+    {
+        // Arrange
+        var input = "10,0,2";
+
+        // Act & Assert
+        _output.WriteLine($"Input: {input}");
+        var exception = Assert.Throws<InvalidOperationException>(() => _service.Divide(input));
+        Assert.Equal("Cannot divide by zero", exception.Message);
+    }
+
+    [Fact]
+    public void Divide_WithSingleNumber_ReturnsNumber()
+    {
+        // Arrange
+        var input = "42";
+
+        // Act
+        var result = _service.Divide(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("42 = 42", result.Formula);
+        Assert.Equal(42, result.Result);
+    }
 }
