@@ -400,4 +400,147 @@ public class CalculatorServiceTests
         Assert.Equal("1 + 2 + 3 = 6", result.Formula);
         Assert.Equal(6, result.Result);
     }
+
+    [Fact]
+    public void Add_WithLongCustomDelimiterAndMaxLengthZero_AllowsAnyLength()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["CalculatorSettings:MaxNumbersAllowed"] = "0",
+                ["CalculatorSettings:Separators:0"] = ",",
+                ["CalculatorSettings:Separators:1"] = "\n",
+                ["CalculatorSettings:AllowNegativeNumbers"] = "false",
+                ["CalculatorSettings:SkipNumbersGreaterThan"] = "1000",
+                ["CalculatorSettings:CustomDelimiter:Prefix"] = "//",
+                ["CalculatorSettings:CustomDelimiter:MaxLength"] = "0"
+            })
+            .Build();
+
+        var settings = new CalculatorSettings();
+        config.GetSection("CalculatorSettings").Bind(settings);
+        var service = new CalculatorService(Options.Create(settings));
+
+        var input = "//***\n1***2***3";
+
+        // Act
+        var result = service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithLongCustomDelimiterAndMaxLengthSet_ThrowsException()
+    {
+        // Arrange - Using default settings with MaxLength = 1
+        var input = "//***\n1***2***3";
+
+        // Act & Assert
+        _output.WriteLine($"Input: {input}");
+        var exception = Assert.Throws<InvalidOperationException>(() => _service.Add(input));
+        Assert.Equal("Custom delimiter exceeds maximum length of 1", exception.Message);
+    }
+
+    [Fact]
+    public void Add_WithBracketedLongCustomDelimiter_BypassesMaxLength()
+    {
+        // Arrange - Using default settings with MaxLength = 1, but brackets bypass the limit
+        var input = "//[***]\n1***2***3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithBracketedCustomDelimiterAndDefaultSeparators_SupportsBoth()
+    {
+        // Arrange
+        var input = "//[***]\n1***2,3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithBracketedSingleCharDelimiter_Works()
+    {
+        // Arrange
+        var input = "//[;]\n1;2;3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithSupportBracketsDisabled_TreatsBracketsAsPartOfDelimiter()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["CalculatorSettings:MaxNumbersAllowed"] = "0",
+                ["CalculatorSettings:Separators:0"] = ",",
+                ["CalculatorSettings:Separators:1"] = "\n",
+                ["CalculatorSettings:AllowNegativeNumbers"] = "false",
+                ["CalculatorSettings:SkipNumbersGreaterThan"] = "1000",
+                ["CalculatorSettings:CustomDelimiter:Prefix"] = "//",
+                ["CalculatorSettings:CustomDelimiter:MaxLength"] = "5",
+                ["CalculatorSettings:CustomDelimiter:SupportBrackets"] = "false"
+            })
+            .Build();
+
+        var settings = new CalculatorSettings();
+        config.GetSection("CalculatorSettings").Bind(settings);
+        var service = new CalculatorService(Options.Create(settings));
+
+        var input = "//[***]\n1[***]2[***]3";
+
+        // Act
+        var result = service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithSupportBracketsEnabled_ExtractsDelimiterFromBrackets()
+    {
+        // Arrange - Using default settings with SupportBrackets = true
+        var input = "//[***]\n1***2***3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
 }

@@ -16,32 +16,67 @@ public class CalculatorService : ICalculatorService
 
     public CalculatorResult Add(string input)
     {
-        // Allow literal \n in input to be interpreted as newline separator
-        input = input.Replace("\\n", "\n");
+        input = NormalizeInput(input);
+        var (processedInput, separators) = ExtractCustomDelimiter(input);
+        var (numbers, negativeNumbers) = ParseNumbers(processedInput, separators);
+        ValidateNumbers(numbers, negativeNumbers);
         
-        // Check for custom delimiter
+        return CalculateResult(numbers);
+    }
+
+    private string NormalizeInput(string input)
+    {
+        // Allow literal \n in input to be interpreted as newline separator
+        return input.Replace("\\n", "\n");
+    }
+
+    private (string input, string[] separators) ExtractCustomDelimiter(string input)
+    {
         var separators = _settings.Separators;
-        if (!string.IsNullOrEmpty(_settings.CustomDelimiter.Prefix) && input.StartsWith(_settings.CustomDelimiter.Prefix))
+        
+        if (string.IsNullOrEmpty(_settings.CustomDelimiter.Prefix) || !input.StartsWith(_settings.CustomDelimiter.Prefix))
         {
-            var prefixLength = _settings.CustomDelimiter.Prefix.Length;
-            var newlineIndex = input.IndexOf('\n');
-            
-            if (newlineIndex > prefixLength)
-            {
-                var customDelimiter = input.Substring(prefixLength, newlineIndex - prefixLength);
-                
-                // Validate custom delimiter length
-                if (customDelimiter.Length > _settings.CustomDelimiter.MaxLength)
-                {
-                    throw new InvalidOperationException($"Custom delimiter exceeds maximum length of {_settings.CustomDelimiter.MaxLength}");
-                }
-                
-                // Add custom delimiter to existing separators
-                separators = _settings.Separators.Concat(new[] { customDelimiter }).ToArray();
-                input = input.Substring(newlineIndex + 1);
-            }
+            return (input, separators);
+        }
+
+        var prefixLength = _settings.CustomDelimiter.Prefix.Length;
+        var newlineIndex = input.IndexOf('\n');
+        
+        if (newlineIndex <= prefixLength)
+        {
+            return (input, separators);
+        }
+
+        var delimiterSection = input.Substring(prefixLength, newlineIndex - prefixLength);
+        var customDelimiter = ExtractDelimiterFromSection(delimiterSection);
+        
+        separators = _settings.Separators.Concat(new[] { customDelimiter }).ToArray();
+        input = input.Substring(newlineIndex + 1);
+        
+        return (input, separators);
+    }
+
+    private string ExtractDelimiterFromSection(string delimiterSection)
+    {
+        // Check if delimiter is enclosed in brackets for multi-character support
+        if (_settings.CustomDelimiter.SupportBrackets && 
+            delimiterSection.StartsWith("[") && 
+            delimiterSection.EndsWith("]"))
+        {
+            return delimiterSection.Substring(1, delimiterSection.Length - 2);
         }
         
+        // Validate custom delimiter length for non-bracketed delimiters (0 means no limit)
+        if (_settings.CustomDelimiter.MaxLength > 0 && delimiterSection.Length > _settings.CustomDelimiter.MaxLength)
+        {
+            throw new InvalidOperationException($"Custom delimiter exceeds maximum length of {_settings.CustomDelimiter.MaxLength}");
+        }
+        
+        return delimiterSection;
+    }
+
+    private (List<int> numbers, List<int> negativeNumbers) ParseNumbers(string input, string[] separators)
+    {
         var parts = input.Split(separators, StringSplitOptions.None);
         var numbers = new List<int>();
         var negativeNumbers = new List<int>();
@@ -49,30 +84,35 @@ public class CalculatorService : ICalculatorService
         foreach (var part in parts)
         {
             var trimmed = part.Trim();
+            
             if (string.IsNullOrWhiteSpace(trimmed) || !int.TryParse(trimmed, out var number))
+            {
+                numbers.Add(0);
+                continue;
+            }
+
+            // Collect negative numbers if not allowed
+            if (!_settings.AllowNegativeNumbers && number < 0)
+            {
+                negativeNumbers.Add(number);
+            }
+            
+            // Skip numbers greater than the configured limit (0 means no limit)
+            if (_settings.SkipNumbersGreaterThan > 0 && number > _settings.SkipNumbersGreaterThan)
             {
                 numbers.Add(0);
             }
             else
             {
-                // Collect negative numbers if not allowed
-                if (!_settings.AllowNegativeNumbers && number < 0)
-                {
-                    negativeNumbers.Add(number);
-                }
-                
-                // Skip numbers greater than the configured limit (0 means no limit)
-                if (_settings.SkipNumbersGreaterThan > 0 && number > _settings.SkipNumbersGreaterThan)
-                {
-                    numbers.Add(0);
-                }
-                else
-                {
-                    numbers.Add(number);
-                }
+                numbers.Add(number);
             }
         }
 
+        return (numbers, negativeNumbers);
+    }
+
+    private void ValidateNumbers(List<int> numbers, List<int> negativeNumbers)
+    {
         // Validate negative numbers if not allowed
         if (!_settings.AllowNegativeNumbers && negativeNumbers.Count > 0)
         {
@@ -82,8 +122,13 @@ public class CalculatorService : ICalculatorService
 
         // Validate number count (0 means no limit)
         if (_settings.MaxNumbersAllowed > 0 && numbers.Count > _settings.MaxNumbersAllowed)
+        {
             throw new InvalidOperationException($"No more than {_settings.MaxNumbersAllowed} numbers are allowed");
+        }
+    }
 
+    private CalculatorResult CalculateResult(List<int> numbers)
+    {
         var result = numbers.Sum();
         var formula = string.Join(" + ", numbers) + " = " + result;
 
