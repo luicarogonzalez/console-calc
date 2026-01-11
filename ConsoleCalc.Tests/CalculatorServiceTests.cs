@@ -308,4 +308,96 @@ public class CalculatorServiceTests
         Assert.Equal("2 + 5000 + 3 = 5005", result.Formula);
         Assert.Equal(5005, result.Result);
     }
+
+    [Fact]
+    public void Add_WithCustomDelimiter_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "//;\n1;2;3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithCustomDelimiterExceedingMaxLength_ThrowsException()
+    {
+        // Arrange
+        var input = "//;;\n1;;2;;3";
+
+        // Act & Assert
+        _output.WriteLine($"Input: {input}");
+        var exception = Assert.Throws<InvalidOperationException>(() => _service.Add(input));
+        Assert.Equal("Custom delimiter exceeds maximum length of 1", exception.Message);
+    }
+
+    [Fact]
+    public void Add_WithCustomDelimiterAndMultipleNumbers_ReturnsCorrectResult()
+    {
+        // Arrange
+        var input = "//|\n1|2|3|4|5";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 + 4 + 5 = 15", result.Formula);
+        Assert.Equal(15, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithCustomDelimiterAndInvalidNumbers_ConvertsToZero()
+    {
+        // Arrange
+        var input = "//;\n1;abc;3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 0 + 3 = 4", result.Formula);
+        Assert.Equal(4, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithoutCustomDelimiterPrefix_UsesDefaultSeparators()
+    {
+        // Arrange
+        var input = "1,2,3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithCustomDelimiterAndDefaultSeparators_SupportsBoth()
+    {
+        // Arrange
+        var input = "//;\n1;2,3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
 }

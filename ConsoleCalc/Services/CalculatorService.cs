@@ -19,7 +19,30 @@ public class CalculatorService : ICalculatorService
         // Allow literal \n in input to be interpreted as newline separator
         input = input.Replace("\\n", "\n");
         
-        var parts = input.Split(_settings.Separators, StringSplitOptions.None);
+        // Check for custom delimiter
+        var separators = _settings.Separators;
+        if (!string.IsNullOrEmpty(_settings.CustomDelimiter.Prefix) && input.StartsWith(_settings.CustomDelimiter.Prefix))
+        {
+            var prefixLength = _settings.CustomDelimiter.Prefix.Length;
+            var newlineIndex = input.IndexOf('\n');
+            
+            if (newlineIndex > prefixLength)
+            {
+                var customDelimiter = input.Substring(prefixLength, newlineIndex - prefixLength);
+                
+                // Validate custom delimiter length
+                if (customDelimiter.Length > _settings.CustomDelimiter.MaxLength)
+                {
+                    throw new InvalidOperationException($"Custom delimiter exceeds maximum length of {_settings.CustomDelimiter.MaxLength}");
+                }
+                
+                // Add custom delimiter to existing separators
+                separators = _settings.Separators.Concat(new[] { customDelimiter }).ToArray();
+                input = input.Substring(newlineIndex + 1);
+            }
+        }
+        
+        var parts = input.Split(separators, StringSplitOptions.None);
         var numbers = new List<int>();
         var negativeNumbers = new List<int>();
 

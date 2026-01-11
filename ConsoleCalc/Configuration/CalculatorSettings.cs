@@ -6,4 +6,5 @@ public class CalculatorSettings
     public string[] Separators { get; set; } = Array.Empty<string>();
     public bool AllowNegativeNumbers { get; set; } = false;  
     public int SkipNumbersGreaterThan { get; set; }
+    public CustomDelimiterSettings CustomDelimiter { get; set; } = new();
 }
