@@ -48,31 +48,56 @@ public class CalculatorService : ICalculatorService
         }
 
         var delimiterSection = input.Substring(prefixLength, newlineIndex - prefixLength);
-        var customDelimiter = ExtractDelimiterFromSection(delimiterSection);
+        var customDelimiters = ExtractDelimitersFromSection(delimiterSection);
         
-        separators = _settings.Separators.Concat(new[] { customDelimiter }).ToArray();
+        separators = _settings.Separators.Concat(customDelimiters).ToArray();
         input = input.Substring(newlineIndex + 1);
         
         return (input, separators);
     }
 
-    private string ExtractDelimiterFromSection(string delimiterSection)
+    private List<string> ExtractDelimitersFromSection(string delimiterSection)
     {
-        // Check if delimiter is enclosed in brackets for multi-character support
-        if (_settings.CustomDelimiter.SupportBrackets && 
-            delimiterSection.StartsWith("[") && 
-            delimiterSection.EndsWith("]"))
+        var delimiters = new List<string>();
+        
+        // Check if we have multiple bracketed delimiters
+        if (_settings.CustomDelimiter.SupportBrackets && delimiterSection.Contains('['))
         {
-            return delimiterSection.Substring(1, delimiterSection.Length - 2);
+            var i = 0;
+            while (i < delimiterSection.Length)
+            {
+                if (delimiterSection[i] == '[')
+                {
+                    var closingIndex = delimiterSection.IndexOf(']', i);
+                    if (closingIndex == -1)
+                    {
+                        throw new InvalidOperationException("Unclosed bracket in custom delimiter");
+                    }
+                    
+                    var delimiter = delimiterSection.Substring(i + 1, closingIndex - i - 1);
+                    delimiters.Add(delimiter);
+                    i = closingIndex + 1;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            
+            if (delimiters.Count > 0)
+            {
+                return delimiters;
+            }
         }
         
-        // Validate custom delimiter length for non-bracketed delimiters (0 means no limit)
+        // Single non-bracketed delimiter
         if (_settings.CustomDelimiter.MaxLength > 0 && delimiterSection.Length > _settings.CustomDelimiter.MaxLength)
         {
             throw new InvalidOperationException($"Custom delimiter exceeds maximum length of {_settings.CustomDelimiter.MaxLength}");
         }
         
-        return delimiterSection;
+        delimiters.Add(delimiterSection);
+        return delimiters;
     }
 
     private (List<int> numbers, List<int> negativeNumbers) ParseNumbers(string input, string[] separators)

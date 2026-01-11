@@ -543,4 +543,80 @@ public class CalculatorServiceTests
         Assert.Equal("1 + 2 + 3 = 6", result.Formula);
         Assert.Equal(6, result.Result);
     }
+
+    [Fact]
+    public void Add_WithMultipleBracketedDelimiters_SupportsAll()
+    {
+        // Arrange
+        var input = "//[***][;;]\n1***2;;3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithMultipleBracketedDelimitersAndDefaultSeparators_SupportsAll()
+    {
+        // Arrange
+        var input = "//[***][;;]\n1***2;;3,4\n5";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 + 4 + 5 = 15", result.Formula);
+        Assert.Equal(15, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithThreeBracketedDelimiters_SupportsAll()
+    {
+        // Arrange
+        var input = "//[*][%][#]\n1*2%3#4";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 + 4 = 10", result.Formula);
+        Assert.Equal(10, result.Result);
+    }
+
+    [Fact]
+    public void Add_WithUnclosedBracket_ThrowsException()
+    {
+        // Arrange
+        var input = "//[***\n1***2***3";
+
+        // Act & Assert
+        _output.WriteLine($"Input: {input}");
+        var exception = Assert.Throws<InvalidOperationException>(() => _service.Add(input));
+        Assert.Equal("Unclosed bracket in custom delimiter", exception.Message);
+    }
+
+    [Fact]
+    public void Add_WithMultipleBracketedDelimitersOfDifferentLengths_Works()
+    {
+        // Arrange
+        var input = "//[*][===]\n1*2===3";
+
+        // Act
+        var result = _service.Add(input);
+
+        // Assert
+        _output.WriteLine($"Input: {input}");
+        _output.WriteLine($"Formula: {result.Formula}");
+        Assert.Equal("1 + 2 + 3 = 6", result.Formula);
+        Assert.Equal(6, result.Result);
+    }
 }
